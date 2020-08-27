@@ -5,23 +5,25 @@ from sklearn.metrics import classification_report
 from sklearn.datasets import *
 from nn import SoftmaxGate, ReluGate, Net
 
-for X, y in [(load_wine()['data'], load_wine()['target']),
-             (load_breast_cancer()['data'], load_breast_cancer()['target']),
-             (load_iris()['data'], load_iris()['target']),
-             (load_digits()['data'], load_digits()['target'])
-             ]:  # ,
+for X, y in [
+    spiral_data_gen(False),
+    (load_wine()['data'], load_wine()['target']),
+    (load_breast_cancer()['data'], load_breast_cancer()['target']),
+    (load_iris()['data'], load_iris()['target']),
+    (load_digits()['data'], load_digits()['target']),
+]:  # ,
+    X -= np.mean(X, axis=0)  # zero-centerring.
     X = X.T
     D, N = X.shape
     K = len(np.unique(y))
 
     print(X.shape)
 
-    hidden_size = 50
-    model = Net()
+    hidden_size = 100
+    model = Net()  # TODO weight decay impleement.
     model.add(ReluGate(shape=(hidden_size, D), learning_rate=.001))
-    #model.add(ReluGate(shape=(hidden_size, hidden_size), learning_rate=.001))
     model.add(SoftmaxGate(shape=(K, hidden_size), learning_rate=.001))
-    num_epoch = 100_000
+    num_epoch = 10_000
     mode = num_epoch // 10
 
     for epoch in range(num_epoch):
@@ -30,6 +32,8 @@ for X, y in [(load_wine()['data'], load_wine()['target']),
         if epoch % mode == 0:
             loss = (-np.log(f[y, range(N)] + .01)).mean()  # compute the loss
             print('{0}.th epoch Loss:{1}'.format(epoch, loss))
+            if loss < .001:
+                break
         # backward
         dLdf = f
         dLdf[y, range(N)] -= 1
@@ -65,8 +69,6 @@ def softmax_grad(s):
             else:
                 jacobian_m[i][j] = -s[i] * s[j]
     return jacobian_m
-
-
 
 
 def softmax_grad_vec(softmax):

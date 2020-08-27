@@ -1,5 +1,7 @@
 import numpy as np
 import copy
+
+
 class Net:
     def __init__(self):
         self.gates = []
@@ -20,23 +22,60 @@ class Net:
         for g in self.gates:
             g.update()
 
-class SigmoidGate:
-    def __init__(self, shape, learning_rate=.001):
+
+class Gate:  # Abstract.
+    def __init__(self, shape, learning_rate=.001, xavier_init=False):
         fout, fin = shape
         self.learning_rate = learning_rate
-        self.W = np.random.randn(fout, fin) * .01
-        self.b = np.ones((fout, 1)) * .01
+        self.W = np.random.randn(fout, fin)
+        self.b = np.ones((fout, 1))
+        if xavier_init:
+            self.W /= np.sqrt(fin)
+        else:
+            self.W *= .001
+            self.b *= .001
         self.X = None
         self.S = None  # S=W.dot(x)+b
-        self.Z = None  # Z=sigmoid(S)
+        self.Z = None  # activation
         self.dLdW, self.dLdb, self.dLdX = None, None, None
         self.dZdS = None
         self.dSdW = None
         self.dSdX = None
 
+        self.decay_rate = .99
+        self.cache_w = np.zeros(self.W.shape)
+        self.cache_b = np.zeros(self.b.shape)
+
     def update(self):
-        self.W += -self.learning_rate * self.dLdW
-        self.b += -self.learning_rate * self.dLdb
+        # TODO imlement weight decay.
+
+        # Gradient Descent
+        # self.W += -self.learning_rate * self.dLdW
+        # self.b += -self.learning_rate * self.dLdb
+
+        # AdaGrad update
+        # self.cache_w += self.dLdW ** 2
+        # self.cache_b += self.dLdb ** 2
+        # self.W += -self.learning_rate * self.dLdW / (np.sqrt(self.cache_w) + 1e-7)
+        # self.b += -self.learning_rate * self.dLdb / (np.sqrt(self.cache_b) + 1e-7)
+
+        # RMSProb
+        self.cache_w = self.decay_rate * self.cache_w + (1 - self.decay_rate) * self.dLdW ** 2
+        self.cache_b = self.decay_rate * self.cache_b + (1 - self.decay_rate) * self.dLdb ** 2
+        self.W += -self.learning_rate * self.dLdW / (np.sqrt(self.cache_w) + 1e-7)
+        self.b += -self.learning_rate * self.dLdb / (np.sqrt(self.cache_b) + 1e-7)
+
+        # ADAM
+        # m =  beta1 * m + (1-beta1) * dx # Momentum
+        # v = beta2 * v + (1-beta2) * (dx**2) # RMSPROB like
+        # m /= 1-beta1**t
+        # v /= 1 - beta2 ** t
+        # self.W += -self.learning_rate * m / (np.sqrt(v) + 1e-7) # RMSPROB like
+
+
+class SigmoidGate(Gate):
+    def __init__(self, shape, learning_rate, xavier_init=False):
+        super().__init__(shape, learning_rate, xavier_init)
 
     def sigmoid(self, x):
         """
@@ -84,19 +123,28 @@ class SigmoidGate:
         self.dLdb = np.sum(dLdS, axis=1, keepdims=True)
         return copy.deepcopy(dLdS)
 
-class SoftmaxGate:
-    def __init__(self, shape, learning_rate=.001):
+
+class SoftmaxGate(Gate):
+    def __init__(self, shape, learning_rate, xavier_init=False):
+        super().__init__(shape, learning_rate, xavier_init)
+
+    """
+    
+    def __init__(self, shape, learning_rate=.001,xavier_init=False):
         fout, fin = shape
         self.learning_rate = learning_rate
-        self.W = np.random.randn(fout, fin) * 0.001
-        self.b = np.ones((fout, 1)) * .001
+        self.W = np.random.randn(fout, fin)
+        self.b = np.ones((fout, 1))
+        if xavier_init:
+            self.W /= np.sqrt(fin)
+        else:
+            self.W *= .001
+            self.b *= .001
+
         self.X, self.S = None, None
         self.dLdW, self.dLdb, self.dLdX = None, None, None
         self.dSdW, self.dSdX = None, None
-
-    def update(self):
-        self.W += -self.learning_rate * self.dLdW
-        self.b += -self.learning_rate * self.dLdb
+    """
 
     def softmax(self, x, axis=0):
         """
@@ -138,20 +186,16 @@ class SoftmaxGate:
         self.dLdb = np.sum(dLdS, axis=1, keepdims=True)
         return copy.deepcopy(dLdX)
 
-class ReluGate:
-    def __init__(self, shape, learning_rate=.001):
-        fout, fin = shape
-        self.learning_rate = learning_rate
-        self.W = np.random.randn(fout, fin) * 0.001
-        self.b = np.ones((fout, 1)) * .001
-        self.S = None, None
-        self.Z = None
-        self.dLdW, self.dLdb = None, None
-        self.dSdW, self.dSdX = None, None
 
-    def update(self):
-        self.W += -self.learning_rate * self.dLdW
-        self.b += -self.learning_rate * self.dLdb
+class ReluGate(Gate):
+    def __init__(self, shape, learning_rate, xavier_init=False):
+        super().__init__(shape, learning_rate, xavier_init)
+
+        if xavier_init:
+            self.W /= np.sqrt(fin / 2)  # He et al. 2015
+        else:
+            self.W *= .001
+            self.b *= .001
 
     def relu(self, X):
         return np.maximum(0, X)
@@ -179,3 +223,27 @@ class ReluGate:
         dLdX = self.dSdX.T.dot(dZdS)
         self.dLdb = np.sum(dZdS, axis=1, keepdims=True)
         return copy.deepcopy(dLdX)
+
+
+class ELUGate:
+    pass
+
+
+class Maxout:
+    pass
+
+
+class BatchNorm:
+    def __init__(self, ):
+        # add after fully connected layers or before nonlinearity.
+        pass
+
+    def forward(self, X):
+        # normalize X.
+        # y=gamma * normalized X + Beta
+        # return y
+
+        pass
+
+    def backward(self):
+        pass

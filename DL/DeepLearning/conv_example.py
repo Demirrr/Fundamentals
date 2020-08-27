@@ -1,6 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from conv_util import zero_pad, select, show_slice
+import torch
+from torch import nn
+
 
 plt.rcParams['figure.figsize'] = (5.0, 4.0)  # set default size of plots
 plt.rcParams['image.interpolation'] = 'nearest'
@@ -22,12 +25,8 @@ show_slice(select(X_padded, 0))
 show_slice(select(X_padded, 0, rec_shape=(0, 4, 0, 4)))
 
 # Convolution from scratch
-
 x = select(X_padded, 0)[:, :, 0]
 x.astype(float)
-
-import torch
-from torch import nn
 
 stride = 2
 k = 3
@@ -37,41 +36,15 @@ conv = nn.Conv1d(in_channels=1,
 x = torch.from_numpy(x)
 x = x.float()
 x = x.view(1, 1, 7, 7)
-print(conv(x))
+
+print(conv(x).detach().numpy())
+
 w0 = conv.weight.data.numpy()
 b0 = conv.bias.data.numpy()
 x = x.numpy()
 
 x = x.reshape(7, 7)
 w0 = w0.reshape(3, 3)
-"""
-print('#Compute Conv from scracth')
-print(w0.shape)
-print(b0.shape)
-print(x.shape)
-
-xH, xW = x.shape
-wH, wW = w0.shape
-
-vH, vW = (xH - wH) // stride + 1, (xW - wW) // stride + 1
-v = np.zeros((vH, vW))  # output shape
-
-v[0, 0] = np.sum(x[0:k, 0:k] * w0) + b0
-v[0, 1] = np.sum(x[0:k, stride:stride + k] * w0) + b0
-v[0, 2] = np.sum(x[0:k, stride + stride:stride + stride + k] * w0) + b0
-
-v[1, 0] = np.sum(x[stride:stride + k, 0:k] * w0) + b0
-v[1, 1] = np.sum(x[stride:stride + k, stride:stride + k] * w0) + b0
-v[1, 2] = np.sum(x[stride:stride + k, stride + stride:stride + stride + k] * w0) + b0
-
-v[2, 0] = np.sum(x[stride + stride:stride + stride + k, 0:k] * w0) + b0
-v[2, 1] = np.sum(x[stride + stride:stride + stride + k, stride:stride + k] * w0) + b0
-v[2, 2] = np.sum(x[stride + stride:stride + stride + k, stride + stride:stride + stride + k] * w0) + b0
-
-print('')
-#print('Python Conv2:', v)
-"""
-
 
 def convolve_slice(X,W,b,stride=2):
     xH,xW=X.shape
@@ -88,5 +61,26 @@ def convolve_slice(X,W,b,stride=2):
             v[i,j]=np.sum(X[stride*i:(stride*i)+k,stride*j:(stride*j)+k] *W) +b
     return v
 
-print('')
+
 print(convolve_slice(x,w0,b0,2))
+print('####')
+
+xH,xW=7,7
+stride=2
+x=np.random.randn(xH,xW)
+k = 3
+conv = nn.Conv1d(in_channels=1,
+                 kernel_size=(k, k),
+                 out_channels=1, stride=stride)
+# from numpy to torch
+x_torch = torch.from_numpy(x)
+x_torch = x_torch.float()
+x_torch = x_torch.view(1, 1, 7, 7)
+print(conv(x_torch).detach().numpy())
+
+w0 = conv.weight.data.numpy()
+b0 = conv.bias.data.numpy()
+w0 = w0.reshape(3, 3)
+
+print(convolve_slice(x,w0,b0,2))
+
