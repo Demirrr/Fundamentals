@@ -20,6 +20,193 @@ class Gate(ABC):
     def dim_checker(self,a,b):
         return a.shape==b.shape
     
+class ResidualBlock(Gate):
+    def __init__(self,in_features=None,out_features=None,res_flow=None,identity_flow=None):
+        super().__init__()
+        if res_flow is None :
+            self.a=[Linear(in_features, in_features), 
+                    BatchNorm(in_features),
+                    ReLU(),
+                    Linear(in_features, out_features)]
+        else:
+            self.a=res_flow
+        
+        if identity_flow is None:
+            self.b=[Linear(in_features, out_features)]    
+        else:
+            self.b=identity_flow
+    @property
+    def param_size(self):
+        return sum([g.param_size for g in self.a+self.b])
+    
+    def __str__(self):
+        return f'ResidualBlock {self.param_size}'
+    
+    def __iter__(self):
+        for i in self.a+self.b:
+            yield i
+        
+    def forward(self, X):
+        """
+        Parameters
+        ----------
+        X : shape=(N,in_features)
+        Returns
+        ----------
+        Z:shape(N,out_features)
+        """
+        res_a= np.zeros(X.shape)+X 
+        res_b= np.zeros(X.shape)+X
+        for g in self.a:
+            res_a=g.forward(res_a)
+        for g in self.b:
+            res_b=g.forward(res_b)
+        return res_a+res_b
+        
+    def backward(self, dZ):
+        """
+        Parameters
+        ----------
+        dZ : shape=(N,out_features)
+        ----------
+        Returns
+        -------
+        dX : shape (N,in_features)
+        """
+        res_a  = np.ones(dZ.shape) *dZ
+        res_b  = np.ones(dZ.shape) *dZ
+        
+        for g in reversed(self.a):
+            res_a= g.backward(res_a)
+        for g in reversed(self.b):
+            res_b= g.backward(res_b)
+        return res_a+res_b
+    
+class ReLU(Gate):
+    def __init__(self,prob=.1):
+        super().__init__()
+        self.cache=dict()
+        
+    def __str__(self):
+        return f'ReLU'
+    
+    def forward(self, X):
+        """
+        X
+        ----------
+        X : shape=(N,D) or         X : shape=(N, K, D)
+        Returns
+        -------
+        Z : shape=(N,D) or         X : shape=(N, K, D)
+
+        """
+        self.cache['X']=X
+        Z=np.maximum(0,X)
+        return Z
+    def backward(self, dZ):
+        dZ[self.cache['X'] <= 0] = 0
+        return dZ
+    
+class BatchNorm(Gate):
+    """
+    Batch normalization.
+    """
+    def __init__(self,dim,eps=.001):
+        super().__init__()
+        self.eps=eps
+        self.weight=np.random.randn(dim) # scale
+        self.bias=np.random.randn(dim) # shift
+        self.num_param=self.weight.size+ self.bias.size
+        
+        self.cache=None
+        # Backward
+        self.dweight=None
+        self.dbias=None
+        
+    def __str__(self):
+        return f'Batch Norm.:epsilon:{self.eps}, Param.{self.param_size}'
+    
+    def forward(self, X):
+        """
+        X
+        ----------
+        X : shape=(N,D)
+
+        Returns
+        -------
+        Z : shape (N,D)
+        """
+        
+        N,D=X.shape
+        # 1. Compute the mini-batch mean.
+        mu=X.mean(axis=0)  
+        
+        # 2. Compute the mini-batch variance -X.var(axis=0)-.
+        # 2.1
+        xmu = X - mu
+        # 2.2
+        sq = xmu ** 2
+        var = 1./N * np.sum(sq, axis = 0)
+        
+        #3. Compute the denominator of normalization
+        sqrtvar = np.sqrt(var + self.eps)
+        #3.1 invert sqrtwar
+        ivar = 1./sqrtvar
+        
+        #4. Execute normalization
+        xhat = xmu * ivar
+        
+        #5. Nor the two transformation steps
+        gammax = self.weight*xhat#self.gamma * xhat
+        
+        #6.
+        Z = gammax + self.bias#gammax + self.beta
+        #store intermediate
+        self.cache = (xhat,xmu,ivar,sqrtvar,var)        
+        return Z
+
+    def backward(self, dZ):
+        N, D = dZ.shape
+        xhat,xmu,ivar,sqrtvar,var=self.cache
+        
+        #6. 
+        ## Forward: gammax + self.beta = Z 
+        ## Backward: dgammax= Z and self.dbeta= Z
+        self.dbias = np.sum(dZ, axis=0); assert self.dbias.shape==self.bias.shape #Sanity checking
+        dgammax = dZ
+
+        #5.
+        ## Forward: self.gamma * xhat = gammax
+        ## Backward: self.dgamma = dgammax * xhat and dxhat= dgammax * self.gamma
+        self.dweight = np.sum(dgammax*xhat, axis=0); assert self.dweight.shape==self.weight.shape
+        dxhat = dgammax * self.weight
+
+        #4.
+        divar = np.sum(dxhat*xmu, axis=0)
+        dxmu1 = dxhat * ivar
+
+        #3.(derivative of quotient) and derivative of root.
+        dsqrtvar = -1. /(sqrtvar**2) * divar
+        dvar = 0.5 * 1. /np.sqrt(var+self.eps) * dsqrtvar
+
+        #2.
+        dsq = 1. /N * np.ones((N,D)) * dvar
+
+        #step3
+        dxmu2 = 2 * xmu * dsq
+
+        #step2
+        dx1 = (dxmu1 + dxmu2)
+        dmu = -1 * np.sum(dxmu1+dxmu2, axis=0)
+
+        #step1
+        dx2 = 1. /N * np.ones((N,D)) * dmu
+
+        #step0
+        dx = dx1 + dx2
+
+        return dx
+    
 class Conv(Gate):
     def __init__(self,in_channels=1, out_channels=1,kernel_size=(2, 2), stride=1, padding=0):        
         super().__init__()

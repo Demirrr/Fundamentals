@@ -50,9 +50,16 @@ class ADAM(Optim):
         for g in gates:
             if g.param_size==0:
                 continue    
-            if not (g in self.cache):
-                self.cache[g]=self.init_cache(g.weight.shape,g.bias.shape)
-            
+                
+            try:
+                
+                if not (g in self.cache):
+                    self.cache[g]=self.init_cache(g.weight.shape,g.bias.shape)
+            except AttributeError as e:
+                print(g)
+                print(g.weight)
+                raise 
+
             self.update_weight(g)
             self.update_bias(g)
             self.t+=1

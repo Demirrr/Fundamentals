@@ -1,7 +1,8 @@
 import numpy as np
-
+from collections.abc import Iterable
+from optim import ADAM
 class Net:
-    def __init__(self,optimizer,verbose=0):
+    def __init__(self,optimizer=ADAM(),verbose=1):
         self.gates = []
         self.optimizer=optimizer
         self.losses=[]
@@ -38,7 +39,7 @@ class Net:
         for g in reversed(self.gates):
             dL = g.backward(dL)
     
-    def iterate_minibatches(self, inputs, targets, batchsize, shuffle_per_epoch=False):
+    def iterate_minibatches(self, inputs, targets, batchsize, shuffle_per_epoch=True):
         assert inputs.shape[0] == targets.shape[0]
         if shuffle_per_epoch:
             indices = np.arange(inputs.shape[0])
@@ -49,7 +50,18 @@ class Net:
             else:
                 excerpt = slice(start_idx, start_idx + batchsize)
             yield inputs[excerpt], targets[excerpt]
+    
+    def update_gate(self,g):
+        self.optimizer.update([g]) # workaround 
 
+    def update(self,gates):
+        for g in gates:
+            if isinstance(g, Iterable):
+                self.update(g)
+            else:
+                self.update_gate(g)
+                
+        
     def train(self,X,y,epoch=100,print_out_per_epoch=1,batchsize=256,shuffle_per_epoch=True):
         if self.verbose>0:
             print('Training starts.')
@@ -71,7 +83,8 @@ class Net:
                 #dL_dZ=np.nan_to_num(dL_dZ,posinf=dL_dZ.max(),neginf=dL_dZ.min())
 
                 self.backward(dL_dZ)
-                self.optimizer.update(self.gates)    
+                self.update(self.gates)
+
 
             avg_acc=acc/len(X)
             avg_loss=loss/len(X)
