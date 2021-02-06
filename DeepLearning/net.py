@@ -1,6 +1,8 @@
 import numpy as np
 from collections.abc import Iterable
 from optim import ADAM
+import time
+
 class Net:
     def __init__(self,optimizer=ADAM(),verbose=1):
         self.gates = []
@@ -10,7 +12,6 @@ class Net:
         
         self.verbose=verbose
         self.total_param=0
-        
         self.eps=.001
     
     def describe(self):
@@ -65,6 +66,7 @@ class Net:
     def train(self,X,y,epoch=100,print_out_per_epoch=1,batchsize=256,shuffle_per_epoch=True):
         if self.verbose>0:
             print('Training starts.')
+        start_time=time.time()
         for i in range(1, epoch+1):
             loss,acc=0,0
             for X_minibatch, y_minibatch in self.iterate_minibatches(X,y,batchsize,shuffle_per_epoch):
@@ -80,11 +82,9 @@ class Net:
                 dL_dZ = Z
                 dL_dZ[range(len(Z)),y_minibatch] -= 1 
                 dL_dZ/=len(dL_dZ) # important
-                #dL_dZ=np.nan_to_num(dL_dZ,posinf=dL_dZ.max(),neginf=dL_dZ.min())
 
                 self.backward(dL_dZ)
                 self.update(self.gates)
-
 
             avg_acc=acc/len(X)
             avg_loss=loss/len(X)
@@ -93,3 +93,6 @@ class Net:
             if i%print_out_per_epoch==0:
                     if self.verbose>0:
                         print(f'[Epoch:{i}]-[Avg.Loss:{avg_loss:.3f}]-[Avg.Acc:{avg_acc:.3f}]')
+        if self.verbose>0:
+            elapsed_time=time.time()-start_time
+            print(f'[Elapsed time :{ elapsed_time:.3f}]')
