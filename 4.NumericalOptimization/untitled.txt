@@ -1,0 +1,2 @@
+Numerical Optimization
+J.Nocedal and S.J. Wright
