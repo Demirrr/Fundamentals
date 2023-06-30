@@ -25,17 +25,6 @@ def knapsack(weights, values, capacity):
     # Return the maximum value and the included items
     return table[n][capacity], included_items
 
-
-# Example usage
-weights = [3, 2, 4, 1]
-values = [5, 3, 8, 2]
-capacity = 6
-
-max_value, items = knapsack(weights, values, capacity)
-print("Maximum value:", max_value)
-print("Included items:", items)
-
-
 def knapsack_greedy(weights, values, capacity):
     # Calculate the value-to-weight ratio for each item
     value_per_weight = [(values[i] / weights[i], i) for i in range(len(values))]
@@ -58,9 +47,38 @@ def knapsack_greedy(weights, values, capacity):
 
     return total_value, selected_items
 
+def knapsack_recursive(weights, values, capacity, n):
+    # Base case: if there are no items or capacity is 0, return 0
+    if n == 0 or capacity == 0:
+        return 0
+
+    # If the weight of the current item is more than the remaining capacity, skip it
+    if weights[n - 1] > capacity:
+        return knapsack_recursive(weights, values, capacity, n - 1)
+
+    # Choose the maximum between including the current item and excluding it
+    include_item = values[n - 1] + knapsack_recursive(weights, values, capacity - weights[n - 1], n - 1)
+    exclude_item = knapsack_recursive(weights, values, capacity, n - 1)
+
+    # Return the maximum value
+    return max(include_item, exclude_item)
 
 
+# Example usage
+weights = [3, 2, 4, 1]
+values = [5, 3, 8, 2]
+capacity = 6
+
+
+print('Iterative solution for 1-0 knapsack problem')
+max_value, items = knapsack(weights, values, capacity)
+print(f"Maximum value:{max_value}\tIncluded items:{items}")
+
+
+print('\nGreedy solution for 1-0 knapsack problem')
 max_value, selected_items = knapsack_greedy(weights, values, capacity)
+print(f"Maximum value:{max_value}\tIncluded items:{items}")
 
-print(f"Maximum value: {max_value}")
-print("Selected items:", selected_items)
+print('\nRecursive solution for 1-0 knapsack problem')
+max_value = knapsack_recursive(weights, values, capacity, len(weights))
+print("Maximum value:", max_value)
