@@ -9,6 +9,10 @@ By iterative_sum() and recursive_sum(), we would like to show that
 # (2) Brute vs Divide-and-Conquer
 
 In the example problem, our goal is to write an algorithm that buys at the lowest and sells at the highest.
+
+# (3) Iterative vs Divide-and-Conquer
+
+Square-matrix multiplication vs  Strassen’s algorithm for matrix multiplication
 """
 import random
 from typing import Iterable
@@ -29,12 +33,6 @@ def recursive_sum(arr):
         mid = len(arr) // 2
         return recursive_sum(arr[:mid]) + recursive_sum(arr[mid:])
 
-
-for _ in range(10):
-    x = [random.randint(0, 100) for _ in range(100)]
-    assert iterative_sum(x) == sum(x) == recursive_sum(x)
-
-
 # (2) Brute vs Divide-and-Conquer
 def find_maximum_subarray_brute_force(arr: Iterable[object]):
     """ Compute all possible buy and sell days:O(n^2)."""
@@ -44,7 +42,6 @@ def find_maximum_subarray_brute_force(arr: Iterable[object]):
             pair.append((arr[j] - arr[i], i, j))
     profit, i, j = sorted(pair, key=lambda x: x[0], reverse=True)[0]
     return profit
-
 
 def find_maximum_subarray_recursive(arr):
     """
@@ -108,6 +105,51 @@ def find_maximum_subarray_recursive(arr):
     l, h, maximum_val = fma(arr, 0, len(arr) - 1)
     return sum(arr[l:h+1])
 
-for _ in range(10):
-    price_of_a_stock = [random.randint(10, 100) for _ in range(100)]
-    assert find_maximum_subarray_brute_force(price_of_a_stock) == find_maximum_subarray_recursive(price_of_a_stock)
+# (3) Iterative vs Divide-and-Conquer
+def square_matrix_mul(A, B):
+    """
+    Complexity O(n^3)
+    A is a n by n matrix
+    B is a n by n matrix
+    """
+    n = len(A)
+    C = [[0 for __ in range(n)] for _ in range(n)]
+    for i in range(n):
+        for j in range(n):
+            for k in range(n):
+                C[i][j] += A[i][k] * B[k][j]
+    return C
+def strassen_square_matrix_mul(A, B):
+    """ O(n ^log(7)) """
+    n = len(A)
+    C = [[0 for __ in range(n)] for _ in range(n)]
+
+    if n == 1:
+        return A[0] * B[0]
+    else:
+        C[0][0] = strassen_square_matrix_mul([A[0][0]], [B[0][0]]) + strassen_square_matrix_mul([A[0][1]], [B[1][0]])
+        C[0][1] = strassen_square_matrix_mul([A[0][0]], [B[0][1]]) + strassen_square_matrix_mul([A[0][1]], [B[1][1]])
+        C[1][0] = strassen_square_matrix_mul([A[1][0]], [B[0][0]]) + strassen_square_matrix_mul([A[1][1]], [B[1][1]])
+        C[1][1] = strassen_square_matrix_mul([A[1][0]], [B[0][1]]) + strassen_square_matrix_mul([A[1][1]], [B[1][1]])
+
+    return C
+
+if False:
+    for _ in range(10):
+        x = [random.randint(0, 100) for _ in range(100)]
+        assert iterative_sum(x) == sum(x) == recursive_sum(x)
+
+if False:
+    for _ in range(10):
+        price_of_a_stock = [random.randint(10, 100) for _ in range(100)]
+        assert find_maximum_subarray_brute_force(price_of_a_stock) == find_maximum_subarray_recursive(price_of_a_stock)
+
+if False:
+    print(strassen_square_matrix_mul(A=[[0, 2],
+                                         [2, 0]],
+                                      B=[[1, 0],
+                                         [0, 1]]))
+    print(square_matrix_mul(A=[[0, 2],
+                               [2, 0]],
+                            B=[[1, 0],
+                               [0, 1]]))
