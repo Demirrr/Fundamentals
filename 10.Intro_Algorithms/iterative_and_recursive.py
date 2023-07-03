@@ -47,6 +47,17 @@ def find_maximum_subarray_brute_force(arr: Iterable[object]):
 
 
 def find_maximum_subarray_recursive(arr):
+    """
+    O(n log(n)))
+
+    T(n) = O(1) + 2T(n/2) + O(n) + O(1)
+    =2T(n/2) + O(n)
+
+    if n=1, T(n) = O(1)
+    n>1, 2T(n/2) + O(n)
+
+    Asymptotically faster than the brute-force method
+    """
     counter=[]
 
     def fma(A, low, high):
@@ -54,11 +65,11 @@ def find_maximum_subarray_recursive(arr):
             return low, high, A[low]  # base case
         # (1) Find the middle index.
         mid = (low + high) // 2
-        # (2) Solve the left.
+        # (2) Solve the left. # O(n/2)
         left_low, left_high, left_sum = fma(A, low, mid)
-        # (3) Solve the right.
+        # (3) Solve the right.# O(n/2)
         right_low, right_high, right_sum = fma(A, mid + 1, high)
-        # (4) Solve the crossing.
+        # (4) Solve the crossing. O(n)
         cross_low, cross_high, cross_sum = fma_crossing(A, low, mid, high)
         counter.append((low,high))
         if left_sum >= right_sum and left_sum>= cross_sum:
