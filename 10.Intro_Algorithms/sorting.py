@@ -19,26 +19,6 @@ import time
 from typing import Iterable
 
 
-class Element:
-    def __init__(self, val, comp):
-        self.val = val
-        self.comp = comp
-
-    def __repr__(self):
-        return f"Element(val={self.val})"
-
-    def __lt__(self, other):
-        return self.comp < other.comp
-
-    def __le__(self, other):
-        return self.comp <= other.comp
-
-    def __gt__(self, other):
-        return self.comp > other.comp
-
-    def __ge__(self, other):
-        return self.comp >= other.comp
-
 def insertion_sort(arr: Iterable[object], ascending=True) -> Iterable[object]:
     """
     An incremental algorithm to sort a sequence of objects.
@@ -200,39 +180,55 @@ def selection_sort(A: Iterable[object]):
 
 
 def heap_sort(arr: Iterable[int]):
-    """ O(n log(n))
-    Like insertion sort, but unlike merge sort,
+    """
+    Heap: ordered binary tree
+    max heap : parent > child, e.g.  nearly complete binary tree
+            (9)
+        (8)      (3)
+      (1) (5)   (2)
+
+    O(n log(n))
+    Like insertion sort, but unlike merge sort.
     heapsort sorts in place:
     only a constant number of array elements are stored outside the input array at any time.
 
-
     Heapsort is an excellent algorithm, but a good implementation of quicksort usually beats it in practice.
 
+
     """
+    left_child = lambda i: 2 * i + 1
+    right_child = lambda i: 2 * i + 2
 
-    def heapify(arr, n, i):
-        largest = i
-        left_child = 2 * i + 1
-        right_child = 2 * i + 2
+    def max_heapify(input_arr, heap_size: int, idx: int):
+        """
+        heap_size: represents how many elements in the heap are stored within array.
+        """
+        # (1) Assign the largest
+        largest = idx
+        # (2) Get the two children of the largest
+        idx_left_child, idx_right_child = left_child(largest), right_child(largest)
+        # (3) Is left child greater ?
+        if heap_size > idx_left_child and input_arr[idx_left_child] > input_arr[idx]:
+            largest = idx_left_child
+        # (3) Is right child greater ?
+        if heap_size > idx_right_child and input_arr[idx_right_child] > input_arr[largest]:
+            largest = idx_right_child
+        # (4) is largest changed?
+        if largest != idx:
+            input_arr[idx], input_arr[largest] = input_arr[largest], input_arr[idx]
+            max_heapify(input_arr, heap_size, largest)
 
-        if left_child < n and arr[i] < arr[left_child]:
-            largest = left_child
+    def build_max_heap(input_array):
+        # Assume heap_size=10, then iterate over [4,3,2,1,0].
+        for i in range(len(input_array) // 2 - 1, -1, -1):
+            max_heapify(input_array, heap_size=len(input_array), idx=i)
 
-        if right_child < n and arr[largest] < arr[right_child]:
-            largest = right_child
-
-        if largest != i:
-            arr[i], arr[largest] = arr[largest], arr[i]
-            heapify(arr, n, largest)
-
-    n = len(arr)
-    # (1) Build max heap:
-    for i in range(n // 2 - 1, -1, -1):
-        heapify(arr, n, i)
-    # (2) Extract elements from the heap one by one
-    for i in range(n - 1, 0, -1):
+    build_max_heap(arr)
+    # the max element is the root.
+    for i in range(len(arr) - 1, 0, -1):
+        # Exchange swap
         arr[0], arr[i] = arr[i], arr[0]
-        heapify(arr, i, 0)
+        max_heapify(arr, heap_size=i, idx=0)
     return arr
 
 
@@ -245,26 +241,28 @@ def quick_sort(arr: Iterable[int]):
 
     """
 
-    def partition(arr, low, high):
-        pivot = arr[high]  # Choosing the last element as the pivot
+    def partition(array, low, high):
+        # (1) Choose the last element as the pivot
+        pivot = array[high]
         i = low - 1
-
+        # (2) Iterate from low to high
         for j in range(low, high):
-            if arr[j] <= pivot:
+            # (3)
+            if array[j] <= pivot:
                 i += 1
-                arr[i], arr[j] = arr[j], arr[i]
-
-        arr[i + 1], arr[high] = arr[high], arr[i + 1]
+                # Exchange.
+                array[i], array[j] = array[j], array[i]
+        # Exchange.
+        array[i + 1], array[high] = array[high], array[i + 1]
         return i + 1
 
-    def qs(arr, low, high):
+    def qs(array, low:int, high:int):
         if low < high:
-            pivot_index = partition(arr, low, high)
+            pivot_index = partition(array, low, high)
 
-            qs(arr, low, pivot_index - 1)
-            qs(arr, pivot_index + 1, high)
-
-    qs(arr, 0, len(arr) - 1)
+            qs(array, low, pivot_index - 1)
+            qs(array, pivot_index + 1, high)
+    qs(arr, low=0, high=len(arr) - 1)
     return arr
 
 
@@ -273,16 +271,3 @@ print(heap_sort([5, 2, 4, 7, 1, 3, 2, 6]))
 print(bubble_sort([5, 2, 4, 7, 1, 3, 2, 6]))
 print(selection_sort([5, 2, 4, 7, 1, 3, 2, 6]))
 print(insertion_sort([5, 2, 4, 7, 1, 3, 2, 6]))
-x = [Element(5, time.time()),
-     Element(2, time.time()),
-     Element(4, time.time()),
-     Element(7, time.time()),
-     Element(1, time.time()),
-     Element(3, time.time()),
-     Element(2, time.time()),
-     Element(6, time.time())]
-print(quick_sort(x))
-print(heap_sort(x))
-print(bubble_sort(x))
-print(selection_sort(x))
-print(insertion_sort(x))
