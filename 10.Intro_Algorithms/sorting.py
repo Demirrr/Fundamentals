@@ -14,71 +14,97 @@ We call such sorting algorithms comparison sorts.
 # Radix                O(d(n+k))
 # Bucket               O(n^2)
 
-
-
 """
+import time
 from typing import Iterable
-def bubble_sort(A: Iterable[object]):
-    """
-    Complexity O(n^2)
-    """
-    swap = False
-    # O(len(L))
-    while not swap:
-        swap = True
-        # O(len(L))
-        for j in range(1, len(A)):
-            if A[j - 1] > A[j]:
-                swap = False
-                temp = A[j]
-                A[j] = A[j - 1]
-                A[j - 1] = temp
-
-    return A
-
-def selection_sort(A: Iterable[object]):
-    """
-    Complexity O(n^2)
-    """
-    suffixSt = 0
-    # O(len(L))
-    while suffixSt != len(A):
-        # O(len(L))
-        for i in range(suffixSt, len(A)):
-            if A[i] < A[suffixSt]:
-                A[suffixSt], A[i] = A[i], A[suffixSt]
-        suffixSt += 1
-    return A
 
 
-def insertion_sort(A: Iterable[int], ascending=True):
+class Element:
+    def __init__(self, val, comp):
+        self.val = val
+        self.comp = comp
+
+    def __repr__(self):
+        return f"Element(val={self.val})"
+
+    def __lt__(self, other):
+        return self.comp < other.comp
+
+    def __le__(self, other):
+        return self.comp <= other.comp
+
+    def __gt__(self, other):
+        return self.comp > other.comp
+
+    def __ge__(self, other):
+        return self.comp >= other.comp
+
+def insertion_sort(arr: Iterable[object], ascending=True) -> Iterable[object]:
     """
-    A: a sequence of (n) numbers
+    An incremental algorithm to sort a sequence of objects.
+
+    arr: a sequence of (n) objects
 
     Complexity: O (n^2)
 
     Best Runtime Complexity : O(n)
     Worst-case Runtime Complexity: O(n^2)
 
+    [5, 2, 4, 7, 1, 3, 2, 6]
+    i=1, key=2, j=0:
+            => insert the element located in the j.th position (2) into the j+1.position;
+            => decrement j
+            => reinsert the key into the j+1. position.
+    [2, 5, 4, 7, 1, 3, 2, 6]
+    i=2, key=4, j=1:
+            => insert the element located in the j.th position (5) into the j+1.position;
+            => decrement j
+            => reinsert the key into the j+1. position.
+    [2, 4, 5, 7, 1, 3, 2, 6]
+    i=3, key=7, j=2:
+            don't do anything
+    [2, 4, 5, 7, 1, 3, 2, 6]
+    i=4, key=1, j=3:
+    => insert the element located in the j.th position (7) into the j+1.position;
+    => decrement j
+    => j=2
+
+    => insert the element located in the j.th position (5) into the j+1.position;
+    => decrement j
+    => j=1
+
+    => insert the element located in the j.th position (4) into the j+1.position;
+    => decrement j
+    => j=0
+
+    => insert the element located in the j.th position (2) into the j+1.position;
+    => decrement j
+    => j=-1
+
+    => reinsert the key into the j+1. position.
+    [1, 2, 4, 5, 7, 3, 2, 6]
+    ...
     """
-    # O(n): Iterative over A.
-    for i in range(1, len(A)):
-        # (1) Store the key value pointed by the i.th index.
-        key = A[i]
-        # (2) Store the left neighbour of the i.th index as pointer.
+    n = len(arr)
+    # O(n): Iterate over n-1 elements.
+    for i in range(1, n):
+        # (1) Store the i.th element.
+        key = arr[i]
+        # (2) Store the left neighbour of the i.th element.
         j = i - 1
-        # (3) O(n): Iterate over A, e.g., A[j], A[j-1], A[j-2] s.t. j>= 0 and the value condition holds.
-        while j >= 0 and ((A[j] > key) == ascending):
+        # (3) O(n): Iterate over elements that are on the left side of the i.th element
+        # starting from i-1 until we reached the first element in the arr or the value condition does not hold.
+        while j >= 0 and ((arr[j] > key) == ascending):
             # (3.1) Insert the value denoted by the pointer into the subsequent right of the pointer.
-            A[j + 1] = A[j]
+            arr[j + 1] = arr[j]
             # (3.2) Reduce the pointer.
             j -= 1
         # (4) Insert the key value.
-        A[j + 1] = key
-    return A
+        arr[j + 1] = key
+    return arr
 
 
-def merge_sort(A: Iterable[object]):
+def merge_sort(arr: Iterable[object]):
     """
     Complexity: O (n log(n)
 
@@ -127,18 +153,53 @@ def merge_sort(A: Iterable[object]):
                 j += 1
         return result
 
-    if len(A) < 2:
-        return A[:]
+    if len(arr) < 2:
+        return arr[:]
     else:
-        middle = len(A) // 2
+        middle = len(arr) // 2
         # (1) Sort the first half
-        first_half = merge_sort(A[:middle])
+        first_half = merge_sort(arr[:middle])
         # (2) Sort the second half
-        second_half = merge_sort(A[middle:])
+        second_half = merge_sort(arr[middle:])
         # (3) Merge (1) and (2) and return it
         return merge(first_half, second_half)
 
-def heap_sort(arr:Iterable[int]):
+
+def bubble_sort(arr: Iterable[object]):
+    """
+    Complexity O(n^2)
+    """
+    swap = False
+    # O(len(L))
+    while not swap:
+        swap = True
+        # O(len(L))
+        for j in range(1, len(arr)):
+            if arr[j - 1] > arr[j]:
+                swap = False
+                temp = arr[j]
+                arr[j] = arr[j - 1]
+                arr[j - 1] = temp
+
+    return arr
+
+
+def selection_sort(A: Iterable[object]):
+    """
+    Complexity O(n^2)
+    """
+    suffixSt = 0
+    # O(len(L))
+    while suffixSt != len(A):
+        # O(len(L))
+        for i in range(suffixSt, len(A)):
+            if A[i] < A[suffixSt]:
+                A[suffixSt], A[i] = A[i], A[suffixSt]
+        suffixSt += 1
+    return A
+
+
+def heap_sort(arr: Iterable[int]):
     """ O(n log(n))
     Like insertion sort, but unlike merge sort,
     heapsort sorts in place:
@@ -207,11 +268,21 @@ def quick_sort(arr: Iterable[int]):
     return arr
 
 
-
 print(quick_sort([5, 2, 4, 7, 1, 3, 2, 6]))
 print(heap_sort([5, 2, 4, 7, 1, 3, 2, 6]))
-print(bubble_sort(A=[5, 2, 4, 7, 1, 3, 2, 6]))
-print(selection_sort(A=[5, 2, 4, 7, 1, 3, 2, 6]))
-print(insertion_sort(A=[5, 2, 4, 7, 1, 3, 2, 6]))
-print(merge_sort(A=[5, 2, 4, 7, 1, 3, 2, 6]))
-
+print(bubble_sort([5, 2, 4, 7, 1, 3, 2, 6]))
+print(selection_sort([5, 2, 4, 7, 1, 3, 2, 6]))
+print(insertion_sort([5, 2, 4, 7, 1, 3, 2, 6]))
+x = [Element(5, time.time()),
+     Element(2, time.time()),
+     Element(4, time.time()),
+     Element(7, time.time()),
+     Element(1, time.time()),
+     Element(3, time.time()),
+     Element(2, time.time()),
+     Element(6, time.time())]
+print(quick_sort(x))
+print(heap_sort(x))
+print(bubble_sort(x))
+print(selection_sort(x))
+print(insertion_sort(x))
