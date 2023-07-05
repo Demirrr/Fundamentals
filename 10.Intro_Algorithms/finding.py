@@ -1,4 +1,4 @@
-from typing import Iterable
+from typing import Iterable, List
 import random
 
 
@@ -69,6 +69,7 @@ def peak_finding2D():
     print(grid)
     print(f'Iterative 2D Peak Finder => Coordinate of the peak:{iterative_peak_finding_2d(grid)}')
 
+
 def finding_maximum_subarray():
     # Peak Finding in 2D.
     def find_maximum_subarray_brute_force(A: Iterable[object]):
@@ -135,6 +136,85 @@ def finding_maximum_subarray():
     arr = [13, -3, -25, 20, -3, -16, -23, 18, 20, -7, 12, -5, -22, 15, -4, 7]
     assert find_maximum_subarray_brute_force(A=arr) == find_maximum_subarray_recursive(arr)
 
+def subgraph_matching():
+    class Graph:
+        def __init__(self):
+            self.nodes = {}
+
+        def add_node(self, node_id:int, label:str):
+            self.nodes[node_id] = {'label': label, 'neighbors': []}
+
+        def add_edge(self, node_id1, node_id2):
+            # Directed graph
+            self.nodes[node_id1]['neighbors'].append(node_id2)
+
+        def get_neighbors(self, idx):
+            return self.nodes[idx]['neighbors']
+
+        def remove_node(self, idx):
+            del self.nodes[idx]
+            for n in self.nodes.values():
+                if idx in n['neighbors']:
+                    n['neighbors'].remove(idx)
+
+        def get_node(self):
+            for i in self.nodes.keys():
+                return i
+
+        def construct_subgraph(self,exclude_node):
+            g = Graph()
+            for n, attr in self.nodes.items():
+                if n != exclude_node:
+                    g.add_node(n, attr['label'])
+
+            for n, attr in self.nodes.items():
+                if n != exclude_node:
+                    for neighbor in attr['neighbors']:
+                        if neighbor != exclude_node:
+                            g.add_edge(n, neighbor)
+            return g
+
+    def is_subgraph_match_recursion(subgraph, graph, node):
+        """ is a subgraph isomorphic match ? """
+        if not subgraph.nodes:
+            return True
+
+        # (1) Get a node from the subgraph.
+        subgraph_node = subgraph.get_node()
+        # (2) Iterate over the neighbors of the input node.
+        for graph_node in graph.get_neighbors(node):
+            # (3) Is a neighbour match ?
+            if graph.nodes[graph_node]['label'] == subgraph.nodes[subgraph_node]['label']:
+                subgraph_copy = Graph()
+                subgraph.construct_subgraph(subgraph_node)
+                if is_subgraph_match_recursion(subgraph_copy, graph, graph_node):
+                    return True
+        return False
+
+
+    # Example usage
+
+    # Create the main graph
+    graph = Graph()
+    graph.add_node(1, label='A')
+    graph.add_node(2, label='B')
+    graph.add_node(3, label='C')
+    graph.add_edge(1, 2)
+    graph.add_edge(2, 3)
+
+    # Create the subgraph
+    subgraph = Graph()
+    subgraph.add_node(1, label='B')
+
+    matching=False
+    for node in graph.nodes:
+        if is_subgraph_match_recursion(subgraph, graph, node):
+            matching=True
+            break
+    print(f'Q: matching?\tA:{matching}')
+
+
 peak_finding1D()
 peak_finding2D()
 finding_maximum_subarray()
+subgraph_matching()
