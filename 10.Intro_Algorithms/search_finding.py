@@ -1,6 +1,32 @@
 from typing import Iterable, List
 import random
 
+def finding_on_sorted_array():
+    x = [1, 3, 4, 7, 9, 11, 23]
+
+    def binary_search(x, item, start, end):
+        if end - start == 0:
+            print('Item doesnt found')
+            exit(1)
+        mid = start + (end - start) // 2
+        pointed_item = x[mid]
+        if pointed_item == item:
+            return mid
+        elif pointed_item > item:
+            # Move to left.
+            # [...,item,...,pointed_item]
+            return binary_search(x, item, start, mid)
+        elif pointed_item < item:
+            # Move to right.
+            # [...,pointed_item,...,item]
+            return binary_search(x, item, mid, end)
+        else:
+            raise RuntimeError('Wrong logic')
+
+    for index_,value in enumerate(x):
+        assert index_==binary_search(x, item=value, start=0, end=len(x))
+
+finding_on_sorted_array()
 
 # Peak Finding in 1D.# an element  is a peak in 1D if if its greater or equal than all its two neighbors
 def peak_finding1D():
@@ -43,6 +69,7 @@ def peak_finding1D():
         assert numbers[idx_peak - 1] <= numbers[idx_peak] >= numbers[idx_peak + 1]
         idx_peak = recursive_peak_finding_1d(numbers, 0, len(numbers))
         assert numbers[idx_peak - 1] <= numbers[idx_peak] >= numbers[idx_peak + 1]
+peak_finding1D()
 
 
 def peak_finding2D():
@@ -68,6 +95,7 @@ def peak_finding2D():
 
     print(grid)
     print(f'Iterative 2D Peak Finder => Coordinate of the peak:{iterative_peak_finding_2d(grid)}')
+peak_finding2D()
 
 
 def finding_maximum_subarray():
@@ -135,13 +163,14 @@ def finding_maximum_subarray():
 
     arr = [13, -3, -25, 20, -3, -16, -23, 18, 20, -7, 12, -5, -22, 15, -4, 7]
     assert find_maximum_subarray_brute_force(A=arr) == find_maximum_subarray_recursive(arr)
+finding_maximum_subarray()
 
 def subgraph_matching():
     class Graph:
         def __init__(self):
             self.nodes = {}
 
-        def add_node(self, node_id:int, label:str):
+        def add_node(self, node_id: int, label: str):
             self.nodes[node_id] = {'label': label, 'neighbors': []}
 
         def add_edge(self, node_id1, node_id2):
@@ -161,7 +190,7 @@ def subgraph_matching():
             for i in self.nodes.keys():
                 return i
 
-        def construct_subgraph(self,exclude_node):
+        def construct_subgraph(self, exclude_node):
             g = Graph()
             for n, attr in self.nodes.items():
                 if n != exclude_node:
@@ -191,7 +220,6 @@ def subgraph_matching():
                     return True
         return False
 
-
     # Example usage
 
     # Create the main graph
@@ -206,15 +234,11 @@ def subgraph_matching():
     subgraph = Graph()
     subgraph.add_node(1, label='B')
 
-    matching=False
+    matching = False
     for node in graph.nodes:
         if is_subgraph_match_recursion(subgraph, graph, node):
-            matching=True
+            matching = True
             break
     print(f'Q: matching?\tA:{matching}')
 
-
-peak_finding1D()
-peak_finding2D()
-finding_maximum_subarray()
 subgraph_matching()
