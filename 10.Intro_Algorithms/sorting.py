@@ -180,29 +180,77 @@ def selection_sort(A: Iterable[object]):
 
 
 def heap_sort(arr: Iterable[int]):
-    """
+    """ Heap Sort Algorithm
+    TLDR; Like insertion sort, but unlike merge sort. Inplace sort.
+
     Heap: ordered binary tree
-    max heap : parent > child, e.g.  nearly complete binary tree
+
+    1. Build max heap from unordered array
+    2. Find max element A[0]
+    3. Swap elements A[n] with A[1]. Now max element at the end of the array
+    4. Forget the last element A[n] ny decrementing the heap size
+    5. New root of a subtree may violate max heap but its children do not violate. Go to (2)
+
+    Visual Explanation:
+    arr=[16, 14, 10, 8, 7, 9, 3, 2, 4, 1]
+    arr[0] is the root of the tree.
+                   (16)
+             (4)          (10)
+        (14)     (7)    (9)  (3)
+      (7)  (8)  (1)
+
+    Heap representation of an arr
+            (0)
+        (1)      (2)
+      (3) (4)   (5) (6)
+    (7)
+    where (i) denotes the i.th element.
+    parent(i) = (i-1)/2, left(i)   = 2(i+1) right(i)  = 2(i+2)
+
+    Max-Heap Property: the key/ of a node parent >= child, e.g.  nearly complete binary tree
             (9)
         (8)      (3)
       (1) (5)   (2)
 
     O(n log(n))
-    Like insertion sort, but unlike merge sort.
-    heapsort sorts in place:
     only a constant number of array elements are stored outside the input array at any time.
+    (0)
 
-    Heapsort is an excellent algorithm, but a good implementation of quicksort usually beats it in practice.
+                   (16)
+             (4)          (10)
+        (14)     (7)    (9)  (3)
+      (7)  (8)  (1)
+
+    (1)
+                   (16)
+             (14)          (10)
+        (4)     (7)    (9)  (3)
+      (7)  (8)  (1)
+
+    (2)
+                (16)
+             (14)          (10)
+        (8)     (7)    (9)  (3)
+      (7)  (4)  (1)
 
 
     """
-    left_child = lambda i: 2 * i + 1
-    right_child = lambda i: 2 * i + 2
+
+    def left_child(i):
+        return 2 * i + 1
+
+    def right_child(i):
+        return 2 * i + 2
 
     def max_heapify(input_arr, heap_size: int, idx: int):
         """
+        Correct a single violation of the heap property in the root of a subtree.
         heap_size: represents how many elements in the heap are stored within array.
+
+        idx denotes the root node of a subtree
         """
+
+        assert heap_size > idx
         # (1) Assign the largest
         largest = idx
         # (2) Get the two children of the largest
@@ -219,18 +267,26 @@ def heap_sort(arr: Iterable[int]):
             max_heapify(input_arr, heap_size, largest)
 
     def build_max_heap(input_array):
-        # Assume heap_size=10, then iterate over [4,3,2,1,0].
-        for i in range(len(input_array) // 2 - 1, -1, -1):
-            max_heapify(input_array, heap_size=len(input_array), idx=i)
+        """
+                    [0,  1,   2, 3, 4, 5, 6, 7, 8, 9]
+        input_array=[16, 14, 10, 8, 7, 9, 3, 2, 4, 1]
 
+        n=10, then iterate over idx=[4,3,2,1,0].
+        """
+        for _ in range(len(input_array) // 2 - 1, -1, -1):
+            max_heapify(input_array, heap_size=len(input_array), idx=_)
+    # (1) Build max heap from unordered array
     build_max_heap(arr)
-    # the max element is the root.
-    for i in range(len(arr) - 1, 0, -1):
+    # Iterate from n-1 to 0 indexes
+    for n in range(len(arr) - 1, 0, -1):
         # Exchange swap
-        arr[0], arr[i] = arr[i], arr[0]
-        max_heapify(arr, heap_size=i, idx=0)
+        # (2) Find max element A[0]
+        # (3) Swap elements A[n] with A[1]. Now max element at the end of the array
+        # (4) Forget the last element A[n] ny decrementing the heap size
+        arr[0], arr[n] = arr[n], arr[0]
+        # (5) New root of a subtree may violate max heap but its children do not violate. Go to (2)
+        max_heapify(arr, heap_size=n, idx=0)
     return arr
-
 
 def quick_sort(arr: Iterable[int]):
     """
@@ -256,12 +312,13 @@ def quick_sort(arr: Iterable[int]):
         array[i + 1], array[high] = array[high], array[i + 1]
         return i + 1
 
-    def qs(array, low:int, high:int):
+    def qs(array, low: int, high: int):
         if low < high:
             pivot_index = partition(array, low, high)
 
             qs(array, low, pivot_index - 1)
             qs(array, pivot_index + 1, high)
+
     qs(arr, low=0, high=len(arr) - 1)
     return arr
 
