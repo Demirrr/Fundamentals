@@ -13,6 +13,10 @@ Feel free to use/modify any code provided in this repository. However, I have a 
 Please do not forget that **“No one has ever become poor by giving.” – Anne Frank**. 
 Please make a small donation to [World Food Programme](https://donatenow.wfp.org/).
 
+conda create -n fun python=3.10 --no-default-packages && conda activate fun
+pip install numpy
+pip install matplotlib
+pip install seaborn
 # Content
 Prerequisite: Linear Algebra
 1. Machine Learning
